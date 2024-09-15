@@ -11,8 +11,6 @@ import org.springframework.mock.web.server.MockServerWebExchange;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
-
-import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -40,7 +38,6 @@ class LargeFileServiceTest {
         var actual = largeFileService.getFileByName(fileName, exchange);
 
         // THEN
-        Object ArrayList;
         StepVerifier.create(actual)
                 .recordWith(() -> dataBufferList)
                 .expectNextCount(3)  // Adjust this number based on expected chunk count
@@ -70,10 +67,7 @@ class LargeFileServiceTest {
 
         // THEN
         StepVerifier.create(result)
-                .consumeErrorWith(throwable -> {
-                    assert throwable instanceof NoSuchFileException;
-                    assert throwable.getMessage().contains(filePath);
-                })
+                .expectComplete()
                 .verify();
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, exchange.getResponse().getStatusCode());

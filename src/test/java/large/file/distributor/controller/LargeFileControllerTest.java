@@ -6,6 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 import java.nio.charset.StandardCharsets;
@@ -20,6 +23,7 @@ class LargeFileControllerTest {
     private WebTestClient webTestClient;
 
     @Test
+    @WithMockUser(username = "user1", roles = "USER")
     void getFileByIdTest() {
         webTestClient.get()
                 .uri("/download/{id}", "alpha")
@@ -34,6 +38,23 @@ class LargeFileControllerTest {
                     var buffer2 = dataBufferToString(dataBuffers.get(1));
                     assertEquals(4096, buffer1.length());
                     assertEquals(4096, buffer2.length());
+                });
+    }
+
+    @Test
+    @WithMockUser(username = "user1", roles = "USER")
+    void fileNotFound_Test() {
+        webTestClient.get()
+                .uri("/download/{id}", "meta")
+                .exchange()
+                .expectStatus().isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR)
+                .expectHeader().contentType(MediaType.TEXT_PLAIN)
+                .expectBody(String.class)
+                .consumeWith(response -> {
+                    String responseBody = response.getResponseBody();
+                    assert responseBody != null;
+                    assert responseBody.contains("File not found");
+                    assert responseBody.contains("files/meta.txt");
                 });
     }
 

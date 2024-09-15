@@ -38,12 +38,26 @@ public class LargeFileService {
                     return DataBufferUtils.read(path, exchange.getResponse().bufferFactory(), 4096);
                 })
                 .publishOn(Schedulers.boundedElastic())
-                .doOnError(throwable -> {
+                .onErrorResume(throwable -> {
                     exchange.getResponse().setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
                     exchange.getResponse().getHeaders().setContentType(MediaType.TEXT_PLAIN);
-                    DataBuffer buffer = exchange.getResponse().bufferFactory().wrap(
-                            ("This is my rifle, this is my gun \nFile not found \n" + throwable.getMessage()).getBytes());
-                    exchange.getResponse().writeWith(Mono.just(buffer)).subscribe();
+                    String errorMessage = "\nFile not found: " + throwable.getMessage();
+                    logger.error("\nError occurred: {}\n", errorMessage);
+
+                    DataBuffer buffer = exchange.getResponse().bufferFactory().wrap(errorMessage.getBytes());
+
+                    return exchange.getResponse().writeWith(Mono.just(buffer)).then(Mono.empty());
                 });
     }
 }
+/*
+.doOnError(throwable -> {
+                    var customException = new LargeFileDistributorException(throwable);
+                    logger.error("An error occurred while retrieving the file", customException);
+                    exchange.getResponse().setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
+                    exchange.getResponse().getHeaders().setContentType(MediaType.TEXT_PLAIN);
+                    DataBuffer buffer = exchange.getResponse().bufferFactory().wrap(
+                            (customException.getMessage()).getBytes());
+                    exchange.getResponse().writeWith(Mono.just(buffer)).subscribe();
+                });
+ */
