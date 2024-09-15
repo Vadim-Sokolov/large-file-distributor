@@ -60,7 +60,6 @@ class LargeFileServiceTest {
 
         // GIVEN
         var fileName = "testFile";
-        var filePath = "files/testFile.txt";
 
         // WHEN
         Flux<DataBuffer> result = largeFileService.getFileByName(fileName, exchange);
